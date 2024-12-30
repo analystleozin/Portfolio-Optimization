@@ -1,0 +1,194 @@
+library(quantmod)
+library(PerformanceAnalytics)
+library(PortfolioAnalytics)
+
+# Defining portfolio 1 composition/pulling data for each asset starting from 2020
+tickers1 <- c("VTI", "VEU", "AGG", "BNDX")
+getSymbols(tickers1, src = "yahoo", from = "2020-01-01", to = Sys.Date())
+
+# Converting to adjusted prices
+prices1 <- do.call(merge, lapply(tickers1, function(ticker) Ad(get(ticker))))
+colnames(prices1) <- tickers1
+
+# Calculatinging log returns for the assets                            
+returns1 <- na.omit(Return.calculate(prices1, method = "log"))
+
+# Defining weights for the assets
+weights1 <- c(0.40, 0.20, 0.30, 0.10)
+
+# Calculating weighted portfolio returns
+portfolio_returns1 <- Return.portfolio(returns1, weights = weights1, rebalance_on = "months")                                
+
+# Creating a benchmark
+benchmark <- c("SPY")
+getSymbols(benchmark, src = "yahoo", from = "2020-01-01", to = Sys.Date())
+
+# Converting to adjusted prices                                 
+benchmark_prices <- Ad(get(benchmark))                                
+
+# Calculating log returns for the benchmark
+benchmark_returns <- na.omit(Return.calculate(benchmark_prices, method = "log"))
+colnames(benchmark_returns) <- benchmark                             
+                                      
+# Combining weighted portfolio retuns with benchmark
+combined1 <- cbind(portfolio_returns1, benchmark_returns)
+colnames(combined1) <- c("Portfolio 1", "SPY")                                 
+                                 
+# Backtesting portfolio 1 vs benchmark
+charts.PerformanceSummary(combined1, main = "Figure 1: Traditional Portfolio vs SPY")
+
+# Calculating portfolio 1 beta
+CAPM.beta(portfolio_returns1, benchmark_returns, 0.045/252)
+
+# Calculating portfolio 1 jensen's alpha
+CAPM.jensenAlpha(portfolio_returns1, benchmark_returns, 0.045/252)                                 
+                                   
+# Defining portfolio constraints and objectives
+port_spec1 <- portfolio.spec(assets = colnames(returns1))
+port_spec1 <- add.constraint(port_spec1, type = "weight_sum", min_sum = 1, max_sum = 1)
+port_spec1 <- add.constraint(port_spec1, type = "box", min = 0.10, max = 0.40)
+port_spec1 <- add.objective(port_spec1, type = "risk", name = "StdDev")
+port_spec1 <- add.objective(port_spec1, type = "return", name = "mean")
+
+# Optimizing portfolio
+opt_port1 <- optimize.portfolio(R = returns1, portfolio = port_spec1, optimize_method = "ROI", trace = TRUE)
+
+# Visualizing optimized portfolio weights
+chart.EF.Weights(opt_port1, main = "Figure 2: Weights Optimized Portfolio 1")
+
+# Calculating optimized portfolio returns
+port1_weights <- extractWeights(opt_port1)
+portfolio1_returns <- Return.portfolio(returns1, weights = port1_weights)
+
+# Combining optimized portfolio with SPY benchmark
+combined2 <- cbind(portfolio1_returns, benchmark_returns)
+colnames(combined2) <- c("Optimized Portfolio 1", "SPY")
+
+# Backtesting optimized portfolio 1 vs benchmark
+charts.PerformanceSummary(combined2, main = "Figure 3: Traditional Optimized Portfolio vs SPY")
+
+# Calculating optimized portfolio 1 beta
+CAPM.beta(portfolio1_returns, benchmark_returns, 0.045/252)
+
+# Calculating optimized portfolio 1 jensen's alpha
+CAPM.jensenAlpha(portfolio1_returns, benchmark_returns, 0.045/252)                                 
+                                
+# Defining portfolio 2 composition/pulling data for each asset starting from 2020                                 
+tickers2 <- c("VTI", "VEU", "AGG", "BNDX", "GLD")
+getSymbols(tickers2, src = "yahoo", from = "2020-01-01", to = Sys.Date())
+
+# Converting to adjusted prices
+prices2 <- do.call(merge, lapply(tickers2, function(ticker) Ad(get(ticker))))
+colnames(prices2) <- tickers2
+
+# Calculating log returns for the assets                            
+returns2 <- na.omit(Return.calculate(prices2, method = "log"))
+
+# Defining weights for the assets
+weights2 <- c(0.40, 0.20, 0.25, 0.05, 0.10)
+
+# Calculating weighted portfolio returns
+portfolio_returns2 <- Return.portfolio(returns2, weights = weights2, rebalance_on = "months")                                             
+
+# Combining weighted portfolio returns with benchmark
+combined3 <- cbind(portfolio_returns2, benchmark_returns)
+colnames(combined3) <- c("Portfolio 2", "SPY")                                 
+
+# Backtesting portfolio 2 vs benchmark
+charts.PerformanceSummary(combined3, main = "Figure 4: Portfolio with Gold vs SPY")
+
+# Calculating portfolio 2 beta
+CAPM.beta(portfolio_returns2, benchmark_returns, 0.045/252)
+
+# Calculating portfolio 2 jensen's alpha
+CAPM.jensenAlpha(portfolio_returns2, benchmark_returns, 0.045/252)                                 
+                                 
+# Defining portfolio constraints and objectives
+port_spec2 <- portfolio.spec(assets = colnames(returns2))
+port_spec2 <- add.constraint(port_spec2, type = "weight_sum", min_sum = 1, max_sum = 1)
+port_spec2 <- add.constraint(port_spec2, type = "box", min = 0.10, max = 0.40)
+port_spec2 <- add.objective(port_spec2, type = "risk", name = "StdDev")
+port_spec2 <- add.objective(port_spec2, type = "return", name = "mean") 
+
+# Optimizing portfolio
+opt_port2 <- optimize.portfolio(R = returns2, portfolio = port_spec2, optimize_method = "ROI", trace = TRUE)
+
+# Visualizing optimized portfolio weights
+chart.EF.Weights(opt_port2, main = "Figure 5: Weights Optimized Portfolio 2")
+
+# Calculating optimized portfolio returns
+port2_weights <- extractWeights(opt_port2)
+portfolio2_returns <- Return.portfolio(returns2, weights = port2_weights)
+
+# Combining optimized portfolio with SPY benchmark
+combined4 <- cbind(portfolio2_returns, benchmark_returns)
+colnames(combined4) <- c("Optimized Portfolio 2", "SPY")
+
+# Becktesting optimized portfolio with gold vs benchmark                                 
+charts.PerformanceSummary(combined4, main = "Figure 6: Optimized Portfolio with Gold vs SPY")
+
+# Calculating optimized portfolio 2 beta
+CAPM.beta(portfolio2_returns, benchmark_returns, 0.045/252)
+
+# Calculating optimized portfolio 2 jensen's alpha
+CAPM.jensenAlpha(portfolio2_returns, benchmark_returns, 0.045/252)                                 
+                                 
+# Defining portfolio 3 composition/pulling data for each asset starting from 2020                                 
+tickers3 <- c("VTI", "VEU", "AGG", "BNDX", "GLD", "BTC-USD")
+getSymbols(tickers3, src = "yahoo", from = "2020-01-01", to = Sys.Date())
+
+# Converting to adjusted prices
+prices3 <- do.call(merge, lapply(tickers3, function(ticker) Ad(get(ticker))))
+colnames(prices3) <- tickers3
+
+# Calculating log returns for the assets                            
+returns3 <- na.omit(Return.calculate(prices3, method = "log"))
+
+# Defining weights for the assets
+weights3 <- c(0.35, 0.15, 0.25, 0.05, 0.10, 0.10)
+
+# Calculating weighted portfolio returns
+portfolio_returns3 <- Return.portfolio(returns3, weights = weights3, rebalance_on = "months")                                             
+
+# Combining weighted portfolio retuns with benchmark
+combined5 <- cbind(portfolio_returns3, benchmark_returns)
+colnames(combined5) <- c("Portfolio 3", "SPY")                                 
+
+# Becktesting portfolio 3 vs benchmark
+charts.PerformanceSummary(combined5, main = "Figure 7: Portfolio with Gold and Bitcoin vs SPY")
+
+# Calculating portfolio 3 beta
+CAPM.beta(portfolio_returns3, benchmark_returns, 0.045/252)
+
+# Calculating portfolio 3 jensen's alpha
+CAPM.jensenAlpha(portfolio_returns3, benchmark_returns, 0.045/252)                                 
+                                 
+# Defining portfolio constraints and objectives
+port_spec3 <- portfolio.spec(assets = colnames(returns3))
+port_spec3 <- add.constraint(port_spec3, type = "weight_sum", min_sum = 1, max_sum = 1)
+port_spec3 <- add.constraint(port_spec3, type = "box", min = 0.10, max = 0.40)
+port_spec3 <- add.objective(port_spec3, type = "risk", name = "StdDev")
+port_spec3 <- add.objective(port_spec3, type = "return", name = "mean") 
+
+# Optimizing portfolio
+opt_port3 <- optimize.portfolio(R = returns3, portfolio = port_spec3, optimize_method = "ROI", trace = TRUE)
+
+# Visualizing optimized portfolio weights
+chart.EF.Weights(opt_port3, main = "Figure 8: Weights Optimized Portfolio 3")
+
+# Calculating optimized portfolio returns
+port3_weights <- extractWeights(opt_port3)
+portfolio3_returns <- Return.portfolio(returns3, weights = port3_weights)
+
+# Combining optimized portfolio with SPY benchmark
+combined6 <- cbind(portfolio3_returns, benchmark_returns)
+colnames(combined6) <- c("Optimized Portfolio 3", "SPY")
+
+# Becktesting optimized portfolio with gold and bitcoin vs benchmark                                 
+charts.PerformanceSummary(combined6, main = "Figure 9: Optimized Portfolio with Gold and Bitcoin vs SPY")
+
+# Calculating optimized portfolio 3 beta
+CAPM.beta(portfolio3_returns, benchmark_returns, 0.045/252)
+
+# Calculating optimized portfolio 3 jensen's alpha
+CAPM.jensenAlpha(portfolio3_returns, benchmark_returns, 0.045/252)                                 
